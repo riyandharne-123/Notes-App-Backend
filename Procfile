@@ -1,2 +1,2 @@
-worker: node app
-web: node app
+worker: node src/main
+web: node src/main
