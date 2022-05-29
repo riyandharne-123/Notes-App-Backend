@@ -1,2 +1,1 @@
-worker: node src/main
-web: node src/main
+web: npm run start
