@@ -3,9 +3,6 @@ import { Model } from 'mongoose';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
-//services
-import { RedisService } from '../redis/redis.service';
-
 //schema
 import { Note, NoteDocument } from './note.schema';
 
@@ -16,27 +13,17 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 @Injectable()
 export class NotesService {
   constructor(
-    @InjectModel(Note.name) private noteModel: Model<NoteDocument>,
-    private redisService: RedisService
+    @InjectModel(Note.name) private noteModel: Model<NoteDocument>
   ){}
 
   async create(req, createNoteDto: CreateNoteDto) {
     createNoteDto['user_id'] = req.user._id;
     const note = await new this.noteModel(createNoteDto).save();
-    await this.redisService.deleteQuery('notes_' + note.user_id);
-    await this.redisService.setObject('note_' + note._id, note)
     return note;
   }
 
   async findAll(req) {
     const user_id = req.user._id;
-
-    const cachedNotes = await this.redisService.getQuery('notes_' + user_id, req)
-
-    if(cachedNotes != null) {
-      return cachedNotes
-   }
-
     const options = {};
 
     if(req.query.search != null && req.query.search != '') {
@@ -71,18 +58,10 @@ export class NotesService {
       'total': total
     };
 
-    await this.redisService.setQuery('notes_' + user_id, req, notes);
-
     return data;
   }
 
   async findOne(id: string) {
-    const cachedNote = await this.redisService.getObject('note_' + id)
-
-    if(cachedNote != null) {
-      return cachedNote
-    }
-
     const note = await this.noteModel.findOne()
     .where({
       _id: id
@@ -92,8 +71,6 @@ export class NotesService {
     if(note == null) {
       return new UnauthorizedException('Note does not exist.');
     }
-
-    await this.redisService.setObject('note_' + id, note)
 
     return note;
   }
@@ -113,10 +90,6 @@ export class NotesService {
     note.description = updateNoteDto.description;
     await note.save();
 
-    await this.redisService.deleteQuery('notes_' + note.user_id);
-
-    await this.redisService.setObject('note_' + id, note)
-
     return note;
   }
 
@@ -131,11 +104,7 @@ export class NotesService {
       return new UnauthorizedException('Note does not exist.');
     }
 
-    await this.redisService.deleteQuery('notes_' + note.user_id);
-
     await note.delete();
-
-    await this.redisService.deleteObject('note_' + id)
 
     return 'Note deleted.'
   }
