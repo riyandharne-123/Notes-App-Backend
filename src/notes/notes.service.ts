@@ -37,6 +37,7 @@ export class NotesService {
 
     const notes = await this.noteModel.find()
     .where(options)
+    .populate('user', 'name email')
     .sort({
       createdAt: 'desc'
     })
@@ -62,11 +63,8 @@ export class NotesService {
   }
 
   async findOne(id: string) {
-    const note = await this.noteModel.findOne()
-    .where({
-      _id: id
-    })
-    .exec()
+    const note = await this.noteModel.findById(id)
+    .populate('user', 'name email')
 
     if(note == null) {
       return new UnauthorizedException('Note does not exist.');

@@ -28,7 +28,7 @@ import { User, UserSchema } from './user.schema'
         JwtModule.register({
             secret: 'jwt-secret',
             signOptions: {
-              expiresIn: 3600,
+              expiresIn: 99999999,
             }
         }),
     ],
